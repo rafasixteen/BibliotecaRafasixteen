@@ -1,0 +1,70 @@
+# Build artifacts
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE-specific files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Dependency cache
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Logs
+*.log
+
+# DotNet specific
+*.vs/
+*.pidb
+*.userprefs
+*.dbmdl
+*.dbproj.schemaview
+
+# Blazor WebView generated files
+*.blazor.webview.js
+
+# Generated files for platforms (Android, iOS, Windows, etc.)
+platforms/
+Resources/Raw/*.designer.cs
+Resources/Resource.designer.cs
+
+# MAUI Cache/Build
+bin/
+obj/
+.cache/
+artifacts/
+
+# Android specific
+*.apk
+*.ap_
+*.aab
+
+# iOS specific
+build/
+*.ipa
+.DS_Store
+*.xcuserdata/
+*.xcuserstate
+*.lock
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.project.xcworkspace/
+
+# Windows specific
+*.appxupload
+*.appxbundle
+*.msixupload
+*.msixbundle
