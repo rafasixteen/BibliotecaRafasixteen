@@ -1,0 +1,28 @@
+.sidebar {
+  height: 100%;
+  width: var(--sidebar-width);
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: var(--sidebar-bg-color);
+  overflow-x: hidden;
+  padding-top: var(--sidebar-padding-top);
+}
+
+.sidebar a {
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  font-size: var(--font-size);
+  color: var(--sidebar-text-color);
+  display: block;
+}
+
+.sidebar a:hover {
+  color: var(--sidebar-hover-color);
+}
+
+.main {
+  margin-left: var(--sidebar-width);
+}

@@ -1,0 +1,51 @@
+﻿<div class="table-wrapper">
+    <table class="fl-table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>ISBN</th>
+                <th>Publisher</th>
+                <th>Author</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (_books != null && _books.Count > 0)
+            {
+                @foreach (Book book in _books)
+                {
+                    <tr @onclick="() => OnRowClick(book)">
+                        <td>@book.Title</td>
+                        <td>@book.ISBN</td>
+                        <td>@book.Publisher.Name</td>
+                        <td>@book.Authors.FirstOrDefault()?.Name</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4">No books available.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code
+{
+    public List<Book>? _books { get; set; } = null;
+
+    protected override void OnInitialized()
+    {
+        _books = LibraryDatabase.GetAllBooks();
+
+        _books.AddRange(LibraryDatabase.GetAllBooks());
+        _books.AddRange(LibraryDatabase.GetAllBooks());
+        _books.AddRange(LibraryDatabase.GetAllBooks());
+        _books.AddRange(LibraryDatabase.GetAllBooks());
+    }
+
+    private void OnRowClick(Book book)
+    {
+    }
+}

@@ -7,26 +7,26 @@ namespace BibliotecaRafasixteen
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [Ignore]
-        public List<Book> Books { get; set; } = new();
+        public List<Book> Books { get; set; } = null!;
     }
 
     public class Book
     {
         [PrimaryKey]
-        public string ISBN { get; set; }
+        public required string ISBN { get; set; }
 
-        public string Title { get; set; }
+        public required string Title { get; set; }
 
         public int PublisherId { get; set; }
 
         [Ignore]
-        public Publisher Publisher { get; set; }
+        public Publisher Publisher { get; set; } = null!;
 
         [Ignore]
-        public List<Author> Authors { get; set; } = new();
+        public List<Author> Authors { get; set; } = null!;
     }
 
     public class Publisher
@@ -34,15 +34,16 @@ namespace BibliotecaRafasixteen
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [Ignore]
-        public List<Book> Books { get; set; } = new();
+        public List<Book> Books { get; set; } = null!;
     }
 
     public class BookAuthor
     {
         public int BookId { get; set; }
+
         public int AuthorId { get; set; }
     }
 }

@@ -1,0 +1,8 @@
+:root {
+    --sidebar-width: 80px; /* Set the width of the sidebar */
+    --sidebar-bg-color: #111; /* Background color for the sidebar */
+    --sidebar-text-color: #818181; /* Text color for links */
+    --sidebar-hover-color: #f1f1f1; /* Hover color for links */
+    --font-size: 25px; /* Default font size */
+    --sidebar-padding-top: 20px; /* Padding on top of sidebar */
+}

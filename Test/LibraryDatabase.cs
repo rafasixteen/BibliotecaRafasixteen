@@ -21,6 +21,19 @@ namespace BibliotecaRafasixteen
             return result;
         }
 
+        public Publisher GetPublisherById(int id)
+        {
+            const string k_query = "select * from Publishers where Id = ?";
+
+            SQLiteCommand command = _connection.CreateCommand(k_query, id);
+            Publisher? result = command.ExecuteQuery<Publisher>().FirstOrDefault();
+
+            if (result == null)
+                throw new ArgumentException($"Publisher with Id '{id}' doesn't exist in the database.");
+
+            return result;
+        }
+
         public Author GetAuthorByName(string name)
         {
             const string k_query = "select * from Authors where Name = ?";
@@ -34,15 +47,25 @@ namespace BibliotecaRafasixteen
             return result;
         }
 
-        public Book GetBookByTitle(string name)
+        public List<Author> GetAuthorsOf(string bookIsbn)
         {
-            const string k_query = "select * from Books where Title = ?";
+            const string k_query = "select * from Authors " +
+                    "inner join BookAuthor on Authors.Id = BookAuthor.AuthorId " +
+                    "where BookAuthor.BookISBN = ?";
 
-            SQLiteCommand command = _connection.CreateCommand(k_query, name);
+            SQLiteCommand command = _connection.CreateCommand(k_query, bookIsbn);
+            return command.ExecuteQuery<Author>();
+        }
+
+        public Book GetBookByIsbn(string isbn)
+        {
+            const string k_query = "select * from Books where ISBN = ?";
+
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbn);
             Book? result = command.ExecuteQuery<Book>().FirstOrDefault();
 
             if (result == null)
-                throw new ArgumentException($"Book with name '{name}' doesn't exist in the database.");
+                throw new ArgumentException($"Book with ISBN '{isbn}' doesn't exist in the database.");
 
             return result;
         }
@@ -75,12 +98,22 @@ namespace BibliotecaRafasixteen
 
         public Book InsertBook(string isbn, string tittle, int publisherId)
         {
+            if (BookExists(isbn))
+                throw new ArgumentException($"Book with ISBN '{isbn}' already exists in the database.");
+
             const string k_query = "insert into Books(ISBN, Title, PublisherId) values (?, ?, ?)";
 
             SQLiteCommand command = _connection.CreateCommand(k_query, isbn, tittle, publisherId);
             command.ExecuteNonQuery();
 
-            return GetBookByTitle(tittle);
+            return GetBookByIsbn(tittle);
+        }
+
+        public void DeleteBookByISBN(string isbk)
+        {
+            const string k_query = "delete from Books where ISBN = ?";
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbk);
+            command.ExecuteNonQuery();
         }
 
         public bool PublisherExists(string publisherName)
@@ -132,6 +165,51 @@ namespace BibliotecaRafasixteen
 
             SQLiteCommand command = _connection.CreateCommand(k_query, isbn, authorId);
             command.ExecuteNonQuery();
+        }
+
+        public List<Author> GetAuthorsOf(Book book)
+        {
+            const string k_query = "select * from Authors " +
+                "inner join BookAuthor on Authors.Id = BookAuthor.AuthorId " +
+                "where BookAuthor.BookISBN = ?";
+
+            SQLiteCommand command = _connection.CreateCommand(k_query, book.ISBN);
+            return command.ExecuteQuery<Author>();
+        }
+
+        public List<Book> GetAllBooks()
+        {
+            const string k_query = "select * from Books";
+            SQLiteCommand command = _connection.CreateCommand(k_query);
+            List<Book> books= command.ExecuteQuery<Book>();
+
+            foreach (Book book in books)
+            {
+                book.Publisher = GetPublisherById(book.PublisherId);
+                book.Authors = GetAuthorsOf(book.ISBN);
+            }
+
+            return books;
+        }
+
+        public List<Book> SearchBooksByTitle(string title)
+        {
+            const string k_query = "select * from Books where Title like ?";
+            SQLiteCommand command = _connection.CreateCommand(k_query, $"%{title}%");
+            List<Book> books = command.ExecuteQuery<Book>();
+
+            foreach (Book book in books)
+            {
+                book.Publisher = GetPublisherById(book.PublisherId);
+                book.Authors = GetAuthorsOf(book.ISBN);
+            }
+
+            return books;
+        }
+
+        public void UpdateBook(Book book)
+        {
+            throw new NotImplementedException();
         }
 
         public void BeginTransaction()
