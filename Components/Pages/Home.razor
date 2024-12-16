@@ -1,0 +1,176 @@
+﻿@page "/"
+
+<div class="container">
+
+    <div class="row justify-content-center my-3">
+        <div class="col-6">
+            <input type="text" class="form-control" placeholder="Search for books..." @oninput="OnSearchChanged" />
+        </div>
+    </div>
+
+    <div class="row justify-content-center my-3">
+        <div class="col-6 text-center">
+            <button class="btn btn-primary" disabled="@(_bookBeingEdited != null)" @onclick="OnAdd">Add Book</button>
+        </div>
+    </div>
+
+    <div class="row header-row">
+        <div class="col header-col">Title</div>
+        <div class="col header-col">Authors</div>
+        <div class="col header-col">Publisher</div>
+        <div class="col header-col">ISBN</div>
+        <div class="col-1 header-col"></div>
+    </div>
+
+    @foreach (Book book in _booksToDisplay)
+    {
+        bool isBeingEdited = book == _bookBeingEdited;
+
+        <div class="row book-row">
+            <div class="col book-col">
+                <input type="text" class="form-control" @bind="book.Title" readonly="@(!isBeingEdited)" />
+            </div>
+            <div class="col book-col">
+                <input type="text" class="form-control" @bind="book.AuthorsString" readonly="@(!isBeingEdited)" />
+            </div>
+            <div class="col book-col">
+                <input type="text" class="form-control" @bind="book.Publisher.Name" readonly="@(!isBeingEdited)" />
+            </div>
+            <div class="col book-col">
+                <input type="text" class="form-control" @bind="book.ISBN" readonly="@(!isBeingEdited)" maxlength="17" @oninput="OnISBNInput" />
+            </div>
+
+            <div class="col-1 book-col">
+                @if (isBeingEdited)
+                {
+                    <a @onclick="() => OnSave(book)" class="save" href="#"><i class='bx bx-check'></i></a>
+                    <a @onclick="() => OnCancel(book)" class="cancel" href="#"><i class='bx bx-x'></i></a>
+                }
+                else
+                {
+                    <a @onclick="() => OnEdit(book)" class="edit" href="#"><i class='bx bx-pencil'></i></a>
+                    <a @onclick="() => OnDelete(book)" class="delete" href="#"><i class='bx bx-trash-alt'></i></a>
+                }
+            </div>
+        </div>
+    }
+
+</div>
+
+@code
+{
+    private List<Book> _books = null!;
+    private List<Book> _booksToDisplay = null!;
+
+    private Book? _bookBeingEdited = null;
+    private Book? _bookBeingEditedOriginalState = null;
+
+    protected override void OnInitialized()
+    {
+        RefreshBooks();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs args)
+    {
+        string searchQuery = args.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrEmpty(searchQuery))
+            _booksToDisplay = _books;
+
+        _booksToDisplay = _books.Where(book => book.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void OnISBNInput(ChangeEventArgs e)
+    {
+        // TODO: Make sure only numbers are added, remove any character when the input changes and add hypens along the way automatically.
+
+        throw new Exception("Not implemented yet. The code below is wrong.");
+
+        string inputISBN = e.Value?.ToString() ?? string.Empty;
+
+        // Remove any non-numeric characters
+        string cleanedISBN = new string(inputISBN.Where(char.IsDigit).ToArray());
+
+        // Add hyphens at the correct positions
+        if (cleanedISBN.Length >= 10)
+        {
+            cleanedISBN = $"{cleanedISBN.Substring(0, 3)}-{cleanedISBN.Substring(3, 1)}-{cleanedISBN.Substring(4, 2)}-{cleanedISBN.Substring(6, 6)}-{cleanedISBN.Substring(12, 1)}";
+        }
+        else if (cleanedISBN.Length >= 4)
+        {
+            cleanedISBN = $"{cleanedISBN.Substring(0, 3)}-{cleanedISBN.Substring(3, 1)}-{cleanedISBN.Substring(4, cleanedISBN.Length - 4)}";
+        }
+
+        // Update the ISBN field with cleaned input
+        _bookBeingEdited.ISBN = cleanedISBN;
+
+        // Optionally, remove hyphens if the user deletes all input
+        if (cleanedISBN.Length == 0)
+        {
+            _bookBeingEdited.ISBN = string.Empty;
+        }
+    }
+
+    private void OnAdd()
+    {
+        Book book = new()
+        {
+            Title = "New Book",
+            AuthorsString = "New Author",
+            Publisher = new Publisher() { Name = "New Publisher" },
+            ISBN = "000-0-00-000000-0"
+        };
+
+        _booksToDisplay.Add(book);
+        OnEdit(book);
+    }
+
+    private void OnEdit(Book book)
+    {
+        _bookBeingEdited = book;
+        _bookBeingEditedOriginalState = book.Clone();
+    }
+
+    private void OnDelete(Book book)
+    {
+        LibraryDatabase.DeleteBook(book.ISBN);
+
+        RefreshBooks();
+    }
+
+    private void OnSave(Book book)
+    {
+        if (LibraryDatabase.HasBook(book.ISBN))
+        {
+            // TODO: Update.
+        }
+        else
+        {
+            // TODO: Add.
+        }
+
+        _bookBeingEdited = null;
+        _bookBeingEditedOriginalState = null;
+    }
+
+    private void OnCancel(Book book)
+    {
+        if (LibraryDatabase.HasBook(book.ISBN))
+        {
+            book.CopyFrom(_bookBeingEditedOriginalState!);
+        }
+        else
+        {
+            _booksToDisplay.Remove(book);
+        }
+
+        _bookBeingEdited = null;
+        _bookBeingEditedOriginalState = null;
+    }
+
+    private void RefreshBooks()
+    {
+        _books = LibraryDatabase.GetAllBooks();
+        _booksToDisplay = _books;
+    }
+}

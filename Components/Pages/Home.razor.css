@@ -1,0 +1,81 @@
+/* Header */
+.header-row {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.header-col {
+    text-align: left;
+}
+/* Header */
+
+/* Book Rows */
+
+.book-row {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.book-row:hover {
+    background-color: #f1f1f1;
+}
+
+.book-col {
+    padding: 10px 15px;
+    text-align: left;
+}
+
+.book-col input {
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.book-col input[readonly] {
+    cursor: none;
+}
+/* Book Rows */
+
+/* Links */
+.book-col a {
+    margin: 0 5px;
+    transition: color 0.3s ease;
+}
+
+.book-col a.edit {
+    color: #ffc107;
+}
+
+.book-col a.delete {
+    color: #e74c3c;
+}
+
+.book-col a.save {
+    color: #2ecc71;
+}
+
+.book-col a.cancel {
+    color: #95a5a6;
+}
+
+.book-col a.edit:hover {
+    color: #ffa400;
+}
+
+.book-col a.delete:hover {
+    color: #c0392b;
+}
+
+.book-col a.save:hover {
+    color: #27ae60;
+}
+
+.book-col a.cancel:hover {
+    color: #7f8c8d;
+}
+/* Links */
