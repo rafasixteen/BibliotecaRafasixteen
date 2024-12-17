@@ -16,14 +16,14 @@ namespace BibliotecaRafasixteen
             {
                 BeginTransaction();
 
+                Publisher publisher = EnsurePublisherExists(book.Publisher.Name);
+                InsertBook(book.ISBN, book.Title, publisher.Id);
+
                 foreach (Author author in book.Authors)
                 {
                     Author existingAutor = EnsureAuthorExists(author.Name);
                     LinkBookToAuthor(book.ISBN, existingAutor.Id);
                 }
-
-                Publisher publisher = EnsurePublisherExists(book.Publisher.Name);
-                InsertBook(book.ISBN, book.Title, publisher.Id);
 
                 Commit();
             }
@@ -73,7 +73,7 @@ namespace BibliotecaRafasixteen
             SQLiteCommand command = _connection.CreateCommand(k_query, isbn, tittle, publisherId);
             command.ExecuteNonQuery();
 
-            return GetBookByIsbn(tittle);
+            return GetBookByIsbn(isbn);
         }
 
         public void LinkBookToAuthor(string bookIsbn, int authorId)

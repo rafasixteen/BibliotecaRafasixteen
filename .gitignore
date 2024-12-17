@@ -36,7 +36,6 @@ project.fragment.lock.json
 *.blazor.webview.js
 
 # Generated files for platforms (Android, iOS, Windows, etc.)
-platforms/
 Resources/Raw/*.designer.cs
 Resources/Resource.designer.cs
 

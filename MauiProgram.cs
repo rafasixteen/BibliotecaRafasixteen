@@ -15,7 +15,10 @@ namespace BibliotecaRafasixteen
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddSingleton(new LibraryDatabase(@"C:\\Users\\rafae\\source\\repos\\BibliotecaRafasixteen\\Database\\library.db"));
+
+            string projectPath = Directory.GetParent(AppContext.BaseDirectory)!.Parent!.Parent!.Parent!.Parent!.FullName;
+            string relativePath = Path.Combine(projectPath, "Database", "library.db");
+            builder.Services.AddSingleton(new LibraryDatabase(relativePath));
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
