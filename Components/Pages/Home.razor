@@ -1,98 +1,165 @@
 ﻿@page "/"
 @inject IJSRuntime JSRuntime
 
-<div class="container" @onkeydown="OnKeyDown" tabindex="0">
-
-    <div class="row justify-content-center my-3">
-        <div class="col-6">
-            <input type="text" class="form-control" placeholder="Search for books..." @oninput="OnSearchChanged" />
-        </div>
+<header class="container-header row">
+    <div class="title col-2">
+        <p>Biblioteca Rafasixteen</p>
     </div>
-
-    <div class="row justify-content-center my-3">
-        <div class="col-6 text-center">
-            <button class="btn btn-primary" disabled="@(_bookBeingEdited != null)" @onclick="OnAdd">Add Book</button>
-        </div>
+    <div class="search-bar col-4">
+        <i class="bx bx-search-alt-2"></i>
+        <input type="text" placeholder="Search" @oninput="OnSearchChanged" />
     </div>
+    <div class="add-button col-2">
+        <i @onclick="OnAdd" class="bx bx-plus @(_bookBeingEdited != null ? "disabled" : "")"></i>
+    </div>
+</header>
 
+<main class="container">
+    <!-- Header Row -->
     <div class="row header-row">
-        <div class="col header-col">Title</div>
-        <div class="col header-col">Authors</div>
-        <div class="col header-col">Publisher</div>
-        <div class="col header-col">ISBN</div>
+        <div class="col header-col">
+            Title
+            <a @onclick="() => ToggleSort(EBookColumn.Title)">
+                <i class="sort-icon @GetSortIconClass(EBookColumn.Title)"></i>
+            </a>
+        </div>
+        <div class="col header-col">
+            Authors
+            <a @onclick="() => ToggleSort(EBookColumn.Authors)">
+                <i class="sort-icon @GetSortIconClass(EBookColumn.Authors)"></i>
+            </a>
+        </div>
+        <div class="col header-col">
+            Publisher
+            <a @onclick="() => ToggleSort(EBookColumn.Publisher)">
+                <i class="sort-icon @GetSortIconClass(EBookColumn.Publisher)"></i>
+            </a>
+        </div>
+        <div class="col-2 header-col">
+            ISBN
+            <a @onclick="() => ToggleSort(EBookColumn.ISBN)">
+                <i class="sort-icon @GetSortIconClass(EBookColumn.ISBN)"></i>
+            </a>
+        </div>
         <div class="col-1 header-col"></div>
     </div>
 
-    @foreach (Book book in _booksToDisplay)
-    {
-        bool isBeingEdited = book == _bookBeingEdited;
+    <!-- Books List -->
+    <div class="container-books">
+        @foreach (Book book in _books)
+        {
+            bool isBeingEdited = book == _bookBeingEdited;
 
-        <div class="row book-row">
-            <div class="col book-col">
-                <input type="text" class="form-control" @bind="book.Title" readonly="@(!isBeingEdited)" />
-            </div>
-            <div class="col book-col">
-                <input type="text" class="form-control" @bind="book.AuthorsString" readonly="@(!isBeingEdited)" />
-            </div>
-            <div class="col book-col">
-                <input type="text" class="form-control" @bind="book.Publisher.Name" readonly="@(!isBeingEdited)" />
-            </div>
-            <div class="col book-col">
-                <input type="text" class="form-control" @bind="@book.ISBN" readonly="@(!isBeingEdited)" maxlength="17" />
-            </div>
+            <div class="row book-row" id="book-@book.ISBN">
+                <div class="col book-col">
+                    <input type="text" class="form-control" @bind="book.Title" readonly="@(!isBeingEdited)" />
+                </div>
+                <div class="col book-col">
+                    <input type="text" class="form-control" @bind="book.AuthorsString" readonly="@(!isBeingEdited)" />
+                </div>
+                <div class="col book-col">
+                    <input type="text" class="form-control" @bind="book.Publisher.Name" readonly="@(!isBeingEdited)" />
+                </div>
+                <div class="col-2 book-col">
+                    <input type="text" class="form-control" @bind="@book.ISBN" readonly="@(!isBeingEdited)" maxlength="13" />
+                </div>
 
-            <div class="col-1 book-col">
-                @if (isBeingEdited)
-                {
-                    <a @onclick="() => OnSave(book)" class="save" href="#"><i class='bx bx-check'></i></a>
-                    <a @onclick="() => OnCancel(book)" class="cancel" href="#"><i class='bx bx-x'></i></a>
-                }
-                else
-                {
-                    <a @onclick="() => OnEdit(book)" class="edit" href="#"><i class='bx bx-pencil'></i></a>
-                    <a @onclick="() => OnDelete(book)" class="delete" href="#"><i class='bx bx-trash-alt'></i></a>
-                }
+                <div class="col-1">
+                    @if (isBeingEdited)
+                    {
+                        <a @onclick="() => OnSave(book)" class="save"><i class="bx bx-check"></i></a>
+                        <a @onclick="() => OnCancel(book)" class="cancel"><i class="bx bx-x"></i></a>
+                    }
+                    else
+                    {
+                        <a @onclick="() => OnEdit(book)" class="edit"><i class="bx bx-pencil"></i></a>
+                        <a @onclick="() => OnDelete(book)" class="delete"><i class="bx bx-trash-alt"></i></a>
+                    }
+                </div>
             </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    <div class="row pagination-container">
+        <div class="col left">
+            <i @onclick="GoToPreviousPage" class='bx bx-chevron-left'></i>
+            <p>Previous</p>
         </div>
-    }
+        <div class="col">
+            @_currentPage of @GetTotalPages()
+        </div>
+        <div class="col right">
+            <p>Next</p>
+            <i @onclick="GoToNextPage" class='bx bx-chevron-right'></i>
+        </div>
+    </div>
 
-</div>
+    <!-- Notifications -->
+    <div class="notification-container">
+        @foreach (Notification notification in _notifications)
+        {
+            <div class="notification @notification.TypeClass">
+                <i class="@notification.IconClass"></i>
+                <p>@notification.Message</p>
+            </div>
+        }
+    </div>
+</main>
 
 @code
 {
     private List<Book> _books = null!;
-    private List<Book> _booksToDisplay = null!;
-
     private Book? _bookBeingEdited = null;
     private Book? _bookBeingEditedOriginalState = null;
+    private bool _isAddingBook = false;
+
+    private Dictionary<EBookColumn, ESortOrder> _sortOrders = null!;
+    private EBookColumn? _currentSortedColumn = null;
+    private string _searchQuery = string.Empty;
+
+    private List<Notification> _notifications = null!;
+
+    private int _bookPerPage = 10;
+    private int _currentPage = 1;
+    private int _totalBooks = 0;
 
     protected override void OnInitialized()
     {
+        _notifications = new();
+
+        InitializeSortStates();
         RefreshBooks();
     }
 
     private void OnSearchChanged(ChangeEventArgs args)
     {
-        string searchQuery = args.Value?.ToString() ?? string.Empty;
-
-        if (string.IsNullOrEmpty(searchQuery))
-            _booksToDisplay = _books;
-
-        _booksToDisplay = _books.Where(book => book.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+        _searchQuery = args.Value?.ToString() ?? string.Empty;
+        RefreshBooks();
     }
+
+    // Books
 
     private void OnAdd()
     {
-        Book book = new()
+        if (_bookBeingEdited != null)
         {
-            Title = "New Book",
-            AuthorsString = "New Author",
-            Publisher = new Publisher() { Name = "New Publisher" },
-            ISBN = "000-0-00000-000-0"
-        };
+            if (_isAddingBook)
+                ShowNotification("Finish adding the current book before adding a new one.", Notification.EType.Warning);
+            else
+                ShowNotification("Finish editing the current book before adding a new one.", Notification.EType.Warning);
 
-        _booksToDisplay.Add(book);
+            return;
+        }
+
+        Book book = Book.Random();
+
+        _isAddingBook = true;
+
+        _books.Add(book);
         OnEdit(book);
+
+        JSRuntime.InvokeVoidAsync("scrollToBook", $"book-{book.ISBN}");
     }
 
     private void OnEdit(Book book)
@@ -104,75 +171,202 @@
     private void OnDelete(Book book)
     {
         LibraryDatabase.DeleteBook(book.ISBN);
+        ShowNotification("Book deleted successfully!", Notification.EType.Info);
 
+        ResetEditingState();
         RefreshBooks();
     }
 
     private void OnSave(Book book)
     {
-        if (_booksToDisplay.Any(book => book.ISBN == book.ISBN))
+        try
         {
-            // TODO: Update.
-            LibraryDatabase.AddBook(book);
-        }
-        else
-        {
-            LibraryDatabase.AddBook(book);
-        }
+            if (_isAddingBook)
+            {
+                LibraryDatabase.AddBook(book);
+                ShowNotification("Book added successfully!", Notification.EType.Info);
+            }
+            else
+            {
+                if (_bookBeingEditedOriginalState!.ISBN != book.ISBN)
+                    LibraryDatabase.UpdateBookISBN(_bookBeingEditedOriginalState.ISBN, book.ISBN);
 
-        _bookBeingEdited = null;
-        _bookBeingEditedOriginalState = null;
+                LibraryDatabase.UpdateBook(book);
+                ShowNotification("Book updated successfully!", Notification.EType.Info);
+            }
+
+            ResetEditingState();
+            RefreshBooks();
+        }
+        catch (Exception e)
+        {
+            ShowNotification(e.Message, Notification.EType.Error);
+        }
     }
 
     private void OnCancel(Book book)
     {
-        if (LibraryDatabase.HasBook(book.ISBN))
-        {
-            book.CopyFrom(_bookBeingEditedOriginalState!);
-        }
+        if (_isAddingBook)
+            _books.Remove(book);
         else
-        {
-            _booksToDisplay.Remove(book);
-        }
+            book.CopyFrom(_bookBeingEditedOriginalState!);
 
+        ResetEditingState();
+        RefreshBooks();
+    }
+
+    private void ResetEditingState()
+    {
         _bookBeingEdited = null;
         _bookBeingEditedOriginalState = null;
+        _isAddingBook = false;
     }
 
     private void RefreshBooks()
     {
-        _books = LibraryDatabase.GetAllBooks();
-        _booksToDisplay = _books;
-    }
+        BookQueryBuilder bookQuery = LibraryDatabase.CreateBookQuery().All();
 
-    private void OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "r")
+        try
         {
-            string randomISBN = GenerateRandomISBN();
-            JSRuntime.InvokeVoidAsync("copyToClipboard", randomISBN);
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+                bookQuery.FilterBy(_searchQuery);
+
+            if (_currentSortedColumn != null)
+                bookQuery.SortBy(_currentSortedColumn.Value, _sortOrders[_currentSortedColumn.Value]);
+
+            _totalBooks = bookQuery.Count();
+
+            if (_currentPage > GetTotalPages())
+                SetPage(GetTotalPages());
+
+            bookQuery.Skip((_currentPage - 1) * _bookPerPage).Take(_bookPerPage);
+
+            _books = bookQuery.Execute();
+        }
+        catch (Exception e)
+        {
+            ShowNotification(e.Message, Notification.EType.Error);
         }
     }
 
-    private string GenerateRandomISBN()
+    private void AddRandomBook()
     {
-        Random random = new();
-
-        int prefix = 978;
-        int group = random.Next(0, 10);
-        int publisher = random.Next(0, 100);
-        int title = random.Next(0, 1000000);
-
-        string isbnWithoutCheck = $"{prefix}{group:D1}{publisher:D2}{title:D6}";
-
-        int sum = 0;
-        for (int i = 0; i < isbnWithoutCheck.Length; i++)
+        try
         {
-            int digit = isbnWithoutCheck[i] - '0';
-            sum += (i % 2 == 0) ? digit : digit * 3;
+            LibraryDatabase.AddBook(Book.Random());
+            ShowNotification("Book added successfully!", Notification.EType.Info);
         }
-        int checkDigit = (10 - (sum % 10)) % 10;
+        catch (Exception e)
+        {
+            ShowNotification(e.Message, Notification.EType.Error);
+        }
+    }
 
-        return $"{prefix}-{group:D1}-{publisher:D2}-{title:D6}-{checkDigit}";
+    // Sorting
+
+    private void InitializeSortStates()
+    {
+        _sortOrders = new();
+
+        foreach (EBookColumn column in Enum.GetValues<EBookColumn>())
+            _sortOrders[column] = ESortOrder.Ascending;
+    }
+
+    private void ToggleSort(EBookColumn column)
+    {
+        ESortOrder sortOrder = _sortOrders[column];
+        _sortOrders[column] = sortOrder == ESortOrder.Ascending ? ESortOrder.Descending : ESortOrder.Ascending;
+        _currentSortedColumn = column;
+
+        RefreshBooks();
+    }
+
+    private void UnselectSortColumn(EBookColumn column)
+    {
+        _sortOrders[column] = ESortOrder.Ascending;
+        _currentSortedColumn = null;
+
+        RefreshBooks();
+    }
+
+    private string GetSortIconClass(EBookColumn column)
+    {
+        const string k_sortAscendingIcon = "bx bxs-chevron-up";
+        const string k_sortDescendingIcon = "bx bxs-chevron-down";
+        const string k_sortedIcon = "sorted-icon";
+
+        ESortOrder sortState = _sortOrders[column];
+        string classList = string.Empty;
+
+        if (ESortOrder.Ascending == sortState)
+            classList = k_sortAscendingIcon;
+        else if (ESortOrder.Descending == sortState)
+            classList = k_sortDescendingIcon;
+
+        if (_currentSortedColumn == column)
+            classList += $" {k_sortedIcon}";
+
+        return classList;
+    }
+
+    // Notifications
+
+    private void ShowNotification(string message, Notification.EType type)
+    {
+        Notification notification = new(message, type);
+        _notifications.Add(notification);
+
+        Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                _notifications.Remove(notification);
+                StateHasChanged();
+            });
+        });
+    }
+
+    // Pagination
+
+    private void SetPage(int page)
+    {
+        if (page <= 0)
+        {
+            ShowNotification("Page number must be greater than 0.", Notification.EType.Warning);
+            return;
+        }
+
+        if (page > GetTotalPages())
+        {
+            ShowNotification("Page number exceeds the total number of pages.", Notification.EType.Warning);
+            return;
+        }
+
+        _currentPage = page;
+        RefreshBooks();
+    }
+
+    private void GoToPreviousPage()
+    {
+        if (_currentPage <= 1)
+            return;
+
+        SetPage(_currentPage - 1);
+    }
+
+    private void GoToNextPage()
+    {
+        if (_currentPage >= GetTotalPages())
+            return;
+
+        SetPage(_currentPage + 1);
+    }
+
+    private int GetTotalPages()
+    {
+        if (_totalBooks == 0)
+            return 1;
+
+        return (int)Math.Ceiling((double)_totalBooks / _bookPerPage);
     }
 }

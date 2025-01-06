@@ -6,7 +6,7 @@ namespace BibliotecaRafasixteen
     {
         private readonly SQLiteConnection _connection = new(databasePath);
 
-        public string DatabasePath => _connection.DatabasePath;
+        public SQLiteConnection Connection => _connection;
 
         #region CREATE
 
@@ -60,9 +60,9 @@ namespace BibliotecaRafasixteen
             return GetAuthorByName(authorName);
         }
 
-        public Book InsertBook(string isbn, string tittle, int publisherId)
+        public Book InsertBook(ISBN13 isbn, string tittle, int publisherId)
         {
-            if (!Book.IsValidISBN13(isbn))
+            if (!ISBN13.IsValid(isbn))
                 throw new ArgumentException($"Cannot insert book: The ISBN '{isbn}' is not a valid ISBN-13. Please check the ISBN and try again.");
 
             if (HasBook(isbn))
@@ -70,17 +70,17 @@ namespace BibliotecaRafasixteen
 
             const string k_query = "insert into Books(ISBN, Title, PublisherId) values (?, ?, ?)";
 
-            SQLiteCommand command = _connection.CreateCommand(k_query, isbn, tittle, publisherId);
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbn.Value, tittle, publisherId);
             command.ExecuteNonQuery();
 
             return GetBookByIsbn(isbn);
         }
 
-        public void LinkBookToAuthor(string bookIsbn, int authorId)
+        public void LinkBookToAuthor(ISBN13 isbn, int authorId)
         {
             const string k_query = "insert into BookAuthor (BookISBN, AuthorId) values (?, ?)";
 
-            SQLiteCommand command = _connection.CreateCommand(k_query, bookIsbn, authorId);
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbn.Value, authorId);
             command.ExecuteNonQuery();
         }
 
@@ -171,11 +171,11 @@ namespace BibliotecaRafasixteen
             return result;
         }
 
-        public Book GetBookByIsbn(string isbn)
+        public Book GetBookByIsbn(ISBN13 isbn)
         {
             const string k_query = "select * from Books where ISBN = ?";
 
-            SQLiteCommand command = _connection.CreateCommand(k_query, isbn);
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbn.Value);
             Book? result = command.ExecuteQuery<Book>().FirstOrDefault();
 
             if (result == null)
@@ -184,49 +184,114 @@ namespace BibliotecaRafasixteen
             return result;
         }
 
-        public bool HasBook(string isbn)
+        public bool HasBook(ISBN13 isbn)
         {
             const string k_query = "select count(*) from Books where ISBN = ?";
 
-            SQLiteCommand command = _connection.CreateCommand(k_query, isbn);
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbn.Value);
             int count = command.ExecuteScalar<int>();
             return count > 0;
         }
 
-        public List<Author> GetAuthorsOfBook(string bookIsbn)
+        public List<Author> GetAuthorsOfBook(ISBN13 isbn)
         {
             const string k_query = "select * from Authors " +
-                    "inner join BookAuthor on Authors.Id = BookAuthor.AuthorId " +
-                    "where BookAuthor.BookISBN = ?";
+                "join BookAuthor on Authors.Id = BookAuthor.AuthorId " +
+                "where BookAuthor.BookISBN = ?";
 
-            SQLiteCommand command = _connection.CreateCommand(k_query, bookIsbn);
+            SQLiteCommand command = _connection.CreateCommand(k_query, isbn.Value);
             return command.ExecuteQuery<Author>();
         }
 
-        public List<Book> GetAllBooks()
+        public BookQueryBuilder CreateBookQuery()
         {
-            const string k_query = "select * from Books";
-            SQLiteCommand command = _connection.CreateCommand(k_query);
-            List<Book> books = command.ExecuteQuery<Book>();
-
-            foreach (Book book in books)
-            {
-                book.Publisher = GetPublisherById(book.PublisherId);
-                book.Authors = GetAuthorsOfBook(book.ISBN);
-            }
-
-            return books;
+            return new BookQueryBuilder(this);
         }
 
         #endregion
 
         #region UPDATE
 
+        public void UpdateBook(Book book)
+        {
+            if (!HasBook(book.ISBN))
+                throw new InvalidOperationException($"Cannot update book: A book with ISBN '{book.ISBN}' does not exist in the database. Please check the ISBN and try again.");
+
+            try
+            {
+                BeginTransaction();
+
+                Publisher publisher = EnsurePublisherExists(book.Publisher.Name);
+
+                const string k_updateBookQuery = "update Books set Title = ?, PublisherId = ? where ISBN = ?";
+                SQLiteCommand updateBookCommand = _connection.CreateCommand(k_updateBookQuery, book.Title, publisher.Id, book.ISBN);
+                updateBookCommand.ExecuteNonQuery();
+
+                const string k_deleteBookAuthorLinkQuery = "delete from BookAuthor where BookISBN = ?";
+                SQLiteCommand deleteLinkCommand = _connection.CreateCommand(k_deleteBookAuthorLinkQuery, book.ISBN);
+                deleteLinkCommand.ExecuteNonQuery();
+
+                foreach (Author author in book.Authors)
+                {
+                    Author existingAuthor = EnsureAuthorExists(author.Name);
+                    LinkBookToAuthor(book.ISBN, existingAuthor.Id);
+                }
+
+                Commit();
+            }
+            catch
+            {
+                Rollback();
+                throw;
+            }
+        }
+
+        public void UpdateBookISBN(ISBN13 oldIsbn, ISBN13 newIsbn)
+        {
+            if (!HasBook(oldIsbn))
+                throw new InvalidOperationException($"Cannot update ISBN: Book with ISBN '{oldIsbn}' does not exist.");
+
+            if (HasBook(newIsbn))
+                throw new InvalidOperationException($"Cannot update ISBN: ISBN '{newIsbn}' is already in use.");
+
+            if (!ISBN13.IsValid(newIsbn))
+                throw new ArgumentException($"Cannot update ISBN: The new ISBN '{newIsbn}' is not a valid ISBN-13. Please check the ISBN and try again.");
+
+            try
+            {
+                BeginTransaction();
+
+                // Step 1: Get all authors of the old ISBN.
+                List<int> authorIds = GetAuthorsOfBook(oldIsbn).Select(author => author.Id).ToList();
+
+                // Step 2: Delete all authors related to the old ISBN.
+                const string deleteLinksQuery = "DELETE FROM BookAuthor WHERE BookISBN = ?";
+                SQLiteCommand deleteLinksCommand = _connection.CreateCommand(deleteLinksQuery, oldIsbn.Value);
+                deleteLinksCommand.ExecuteNonQuery();
+
+                // Step 3: Update the ISBN in the Books table.
+                const string updateISBNQuery = "UPDATE Books SET ISBN = ? WHERE ISBN = ?";
+                SQLiteCommand updateCommand = _connection.CreateCommand(updateISBNQuery, newIsbn.Value, oldIsbn.Value);
+                updateCommand.ExecuteNonQuery();
+
+                // Step 4: Recreate links with the new ISBN.
+                foreach (int authorId in authorIds)
+                    LinkBookToAuthor(newIsbn, authorId);
+
+                Commit();
+            }
+            catch
+            {
+                Rollback();
+                throw;
+            }
+        }
+
         #endregion
 
         #region DELETE
 
-        public void DeleteBook(string isbn)
+        public void DeleteBook(ISBN13 isbn)
         {
             if (!HasBook(isbn))
                 throw new InvalidOperationException($"Cannot delete book: A book with ISBN '{isbn}' does not exist in the database. Please check the ISBN and try again.");
@@ -236,11 +301,11 @@ namespace BibliotecaRafasixteen
                 BeginTransaction();
 
                 const string k_deleteBookAuthorLinkQuery = "delete from BookAuthor where BookISBN = ?";
-                SQLiteCommand deleteLinkCommand = _connection.CreateCommand(k_deleteBookAuthorLinkQuery, isbn);
+                SQLiteCommand deleteLinkCommand = _connection.CreateCommand(k_deleteBookAuthorLinkQuery, isbn.Value);
                 deleteLinkCommand.ExecuteNonQuery();
 
                 const string k_deleteBookQuery = "delete from Books where ISBN = ?";
-                SQLiteCommand deleteBookCommand = _connection.CreateCommand(k_deleteBookQuery, isbn);
+                SQLiteCommand deleteBookCommand = _connection.CreateCommand(k_deleteBookQuery, isbn.Value);
                 deleteBookCommand.ExecuteNonQuery();
 
                 Commit();
@@ -268,6 +333,12 @@ namespace BibliotecaRafasixteen
                 return InsertAuthor(authorName);
 
             return GetAuthorByName(authorName);
+        }
+
+        public void PopulateBook(Book book)
+        {
+            book.Publisher = GetPublisherById(book.PublisherId);
+            book.Authors = GetAuthorsOfBook(book.ISBN);
         }
 
         public void BeginTransaction()

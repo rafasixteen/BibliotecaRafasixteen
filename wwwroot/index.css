@@ -1,0 +1,31 @@
+:root {
+    /* Colors */
+    --header-background-color: #2194f3;
+    --body-background-color: whitesmoke;
+    --row-background-color: white;
+    --row-hover-background-color: #f0f8ff;
+    --edit-icon-color: #ffc107;
+    --edit-icon-hover-color: #ffa400;
+    --delete-icon-color: #e74c3c;
+    --delete-icon-hover-color: #c0392b;
+    --save-icon-color: #2ecc71;
+    --save-icon-hover-color: #27ae60;
+    --cancel-icon-color: #95a5a6;
+    --cancel-icon-hover-color: #7f8c8d;
+    /* Font Sizes */
+    --icon-font-size: 1.2rem;
+    /* Dimensions */
+    --book-container-height: 70vh;
+}
+
+body, html {
+    position: relative;
+    height: 100%;
+}
+
+
+#app {
+    background-color: var(--body-background-color);
+    height: 100vh;
+    overflow-x: hidden;
+}

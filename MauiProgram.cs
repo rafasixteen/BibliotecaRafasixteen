@@ -6,8 +6,7 @@ namespace BibliotecaRafasixteen
     {
         public static MauiApp CreateMauiApp()
         {
-            var builder = MauiApp.CreateBuilder();
-            builder
+            MauiAppBuilder builder = MauiApp.CreateBuilder()
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>
                 {
@@ -15,14 +14,11 @@ namespace BibliotecaRafasixteen
                 });
 
             builder.Services.AddMauiBlazorWebView();
-
-            string projectPath = Directory.GetParent(AppContext.BaseDirectory)!.Parent!.Parent!.Parent!.Parent!.FullName;
-            string relativePath = Path.Combine(projectPath, "Database", "library.db");
-            builder.Services.AddSingleton(new LibraryDatabase(relativePath));
+            builder.Services.AddLibraryDatabase();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
